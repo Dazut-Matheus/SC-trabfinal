@@ -7,9 +7,9 @@ import { writeFile } from 'fs/promises';
 
 class DroneSimulation {
     initializeVectors() {
-        const tam = this.tam; // Tamanho dos arrays de tempo
+        const tam = this.tam;
 
-        this.x = Array.from({ length: 8 }, () => new Array(tam).fill(0)); // Matriz de estado
+        this.x = Array.from({ length: 8 }, () => new Array(tam).fill(0));
         this.x[0][0] = 0;
         this.x[1][0] = 0;
         this.x[2][0] = 0;
@@ -19,7 +19,6 @@ class DroneSimulation {
         this.x[6][0] = 0 * Math.PI / 180;
         this.x[7][0] = 0 * Math.PI / 180;
 
-        // Inicialização dos vetores de controle e erros
         this.w_ = Array.from({ length: 2 }, () => new Array(this.td.length).fill(0));
         this.Phi_ = new Array(this.td.length).fill(0);
         this.WP_ = Array.from({ length: 2 }, () => new Array(this.td.length).fill(0));
@@ -28,20 +27,20 @@ class DroneSimulation {
         this.ePhi_ = new Array(this.td.length).fill(0);
         this.eOme_ = new Array(this.td.length).fill(0);
 
-        this.ePm1 = 0; // Erro posição k-1 (passo anterior)
-        this.eVm1 = 0; // Erro atitude k-1 (passo anterior)
+        this.ePm1 = 0;
+        this.eVm1 = 0;
     }
 
     constructor() {
-        // Definição dos parâmetros e constantes
-        this.h = 1e-3; // passo da simulação de tempo contínuo
-        this.Ts = 10e-3; // intervalo de atuação do controlador
+
+        this.h = 1e-3;
+        this.Ts = 10e-3;
         this.fTh = this.Ts / this.h;
         this.maxT = 60;
         this.tam = Math.floor(this.maxT / this.h);
         this.j = 0;
 
-        // Vetor de estados
+
         this.x = Array.from({ length: 8 }, () => new Array(this.tam).fill(0));
         this.x[0][0] = 0;
         this.x[1][0] = 0;
@@ -52,31 +51,29 @@ class DroneSimulation {
         this.x[6][0] = 0 * Math.PI / 180;
         this.x[7][0] = 0 * Math.PI / 180;
 
-        // Parâmetros do sistema de controle
-        this.w_ = Array.from({ length: 2 }, () => new Array(this.tam).fill(0)); // Vetor de controle relativo à rotação
-        this.Phi_ = new Array(this.tam).fill(0); // Vetor de comando de Atitude
-        this.WP_ = Array.from({ length: 2 }, () => new Array(this.tam).fill(0)); // Vetor de comando de Waypoint
-        this.eP_ = Array.from({ length: 2 }, () => new Array(this.tam).fill(0)); // Vetor dos erros de posição
-        this.eV_ = Array.from({ length: 2 }, () => new Array(this.tam).fill(0)); // Vetor dos erros de velocidade
-        this.ePhi_ = new Array(this.tam).fill(0); // Vetor dos erros de atitude
-        this.eOme_ = new Array(this.tam).fill(0); // Vetor dos erros de velocidade angular
 
-        this.ePm1 = 0; // erro posição k-1 (passo anterior)
-        this.eVm1 = 0; // erro atitude k-1 (passo anterior)
+        this.w_ = Array.from({ length: 2 }, () => new Array(this.tam).fill(0));
+        this.Phi_ = new Array(this.tam).fill(0);
+        this.WP_ = Array.from({ length: 2 }, () => new Array(this.tam).fill(0));
+        this.eP_ = Array.from({ length: 2 }, () => new Array(this.tam).fill(0));
+        this.eV_ = Array.from({ length: 2 }, () => new Array(this.tam).fill(0));
+        this.ePhi_ = new Array(this.tam).fill(0);
+        this.eOme_ = new Array(this.tam).fill(0);
 
-        // Constantes do modelo
-        this.m = 0.25; // massa
-        this.g = 9.81; // aceleração da gravidade
-        this.l = 0.1; // tamanho
-        this.kf = 1.744e-08; // constante de força
-        this.Iz = 2e-4; // momento de inércia
+        this.ePm1 = 0;
+        this.eVm1 = 0;
+
+        this.m = 0.25;
+        this.g = 9.81;
+        this.l = 0.1;
+        this.kf = 1.744e-08;
+        this.Iz = 2e-4;
         this.tal = 0.05;
         this.Fe = -this.m * this.g;
 
-        // Restrições do controle
-        this.phi_max = 15 * Math.PI / 180; // ângulo máximo
+        this.phi_max = 15 * Math.PI / 180;
         this.w_max = 15000;
-        this.Fc_max = this.kf * Math.pow(this.w_max, 2); // Força de controle máximo
+        this.Fc_max = this.kf * Math.pow(this.w_max, 2);
         this.Tc_max = this.l * this.kf * Math.pow(this.w_max, 2);
 
         // Waypoints
@@ -89,43 +86,36 @@ class DroneSimulation {
     }
 
     xDot(t, x, w_) {
-        // Parâmetros
         console.log('x:', x);
         console.log('w:', w_);
-        const w_max = 15000; // velocidade máxima do motor
-        const m = 0.25; // massa
-        const g = 9.81; // aceleração da gravidade
-        const l = 0.1; // tamanho
-        const kf = 1.744e-08; // constante de força
-        const Iz = 2e-4; // momento de inércia
+        const w_max = 15000;
+        const m = 0.25;
+        const g = 9.81;
+        const l = 0.1;
+        const kf = 1.744e-08;
+        const Iz = 2e-4;
         const tal = 0.005;
 
         const P = [0, -m * g];
 
-        // Estados atuais
         const w = x.slice(0, 2);
         const r = x.slice(2, 4);
         const v = x.slice(4, 6);
         const phi = x[6];
         const ome = x[7];
 
-        // Forças
         const f1 = kf * Math.pow(w[0], 2);
         const f2 = kf * Math.pow(w[1], 2);
 
-        // Torque
         const Tc = l * (f1 - f2);
 
-        // Força de controle
         const Fc_B = [0, f1 + f2];
 
-        // Matriz de atitude
         const D_RB = [
             [Math.cos(phi), -Math.sin(phi)],
             [Math.sin(phi), Math.cos(phi)]
         ];
 
-        // Derivadas
         const w_dot = w.map((w_i, i) => (-w_i + w_[i]) / tal);
         const r_dot = v;
         const v_dot = [
@@ -179,15 +169,12 @@ class DroneSimulation {
 
     simulate() {
         for (let k = 0; k < this.tam - 1; k++) {
-            // Sistema de controle
             if (k % this.fTh === 0) {
-                // Extrai os dados do vetor
                 let r_k = [this.x[2][k], this.x[3][k]]; // Posição atual
                 let v_k = [this.x[4][k], this.x[5][k]]; // Velocidade atual
                 let phi_k = this.x[6][k]; // Ângulo de inclinação atual
                 let ome_k = this.x[7][k]; // Velocidade angular atual
 
-                // Lógica de controle de posição
                 let kpP = 0.075;
                 let kdP = 0.25;
                 let eP = [this.r_[0][this.r_ID] - r_k[0], this.r_[1][this.r_ID] - r_k[1]];
@@ -199,7 +186,6 @@ class DroneSimulation {
                 this.eV_[0][this.j] = eV[0];
                 this.eV_[1][this.j] = eV[1];
 
-                // Lógica de controle de Waypoint
                 if (Math.sqrt(eP[0] * eP[0] + eP[1] * eP[1]) < 0.1 && this.r_ID < this.r_IDN) {
                     this.r_ID++;
                     console.log("Buscar Waypoint: ", this.r_ID);
@@ -209,7 +195,6 @@ class DroneSimulation {
                 let Fy = kpP * eP[1] + kdP * eV[1] - this.Fe;
                 Fy = Math.max(0.2 * this.Fc_max, Math.min(Fy, 0.8 * this.Fc_max));
 
-                // Lógica de controle de atitude
                 let phi_ = Math.atan2(-Fx, Fy);
                 if (Math.abs(phi_) > this.phi_max) {
                     let signal = phi_ / Math.abs(phi_);
@@ -222,7 +207,6 @@ class DroneSimulation {
                 let Fc = Math.sqrt(Fxy[0] * Fxy[0] + Fxy[1] * Fxy[1]);
                 let f12 = [Fc / 2.0, Fc / 2.0];
 
-                // Lógica de controle de ângulo e velocidade angular
                 let kpA = 0.75;
                 let kdA = 0.05;
                 let ePhi = phi_ - phi_k;
@@ -254,7 +238,6 @@ class DroneSimulation {
                 this.j++;
             }
 
-            // Simulação um passo à frente
             let tk = k * this.h;
             this.x[0][k + 1] = this.x[0][k];
             this.x[1][k + 1] = this.x[1][k];
@@ -301,16 +284,8 @@ class DroneSimulation {
             this.x[7][k + 1] = this.x[7][k] + (this.h / 6.0) * (k1[7] + 2 * k2[7] + 2 * k3[7] + k4[7]);
         }
 
-        // Processamento de variáveis intermediárias
-        // ...
-
-        // Visualização dos resultados
-        // ...
     }
 
 }
-// Cria uma instância da classe DroneSimulation
 const simulation = new DroneSimulation();
-
-// Chama o método simulate para iniciar a simulação
 simulation.simulate();

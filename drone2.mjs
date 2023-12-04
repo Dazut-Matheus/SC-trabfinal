@@ -204,6 +204,5 @@ async function salvarDadosCSV(dados, nomeArquivo) {
     }
 }
 
-// Salvar dados da simulação em arquivos CSV
 salvarDadosCSV(VecXf, 'dados_simulacao.csv');
 salvarDadosCSV(VecControl, 'dados_controle.csv');
